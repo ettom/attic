@@ -17,6 +17,10 @@ use attic::nix_store::{NixStore, StorePath};
 /// Watch the Nix Store for new paths and upload them to a binary cache.
 #[derive(Debug, Parser)]
 pub struct WatchStore {
+    /// Path to the client config file.
+    #[clap(long)]
+    pub config_path: Option<PathBuf>,
+
     /// The cache to push to.
     ///
     /// This can be either `servername:cachename` or `cachename`
@@ -46,7 +50,7 @@ pub async fn run(opts: Opts) -> Result<()> {
         return Err(anyhow!("The number of jobs cannot be 0"));
     }
 
-    let config = Config::load()?;
+    let config = Config::load(sub.config_path.as_deref())?;
 
     let store = Arc::new(NixStore::connect()?);
     let store_dir = store.store_dir().to_owned();

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::Parser;
 
@@ -8,6 +10,10 @@ use crate::config::{Config, ServerConfig, ServerTokenConfig};
 /// Log into an Attic server.
 #[derive(Debug, Parser)]
 pub struct Login {
+    /// Path to the client config file.
+    #[clap(long)]
+    pub config_path: Option<PathBuf>,
+
     /// Name of the server.
     name: ServerName,
 
@@ -24,7 +30,7 @@ pub struct Login {
 
 pub async fn run(opts: Opts) -> Result<()> {
     let sub = opts.command.as_login().unwrap();
-    let mut config = Config::load()?;
+    let mut config = Config::load(sub.config_path.as_deref())?;
     let mut config_m = config.as_mut();
 
     if let Some(server) = config_m.servers.get_mut(&sub.name) {

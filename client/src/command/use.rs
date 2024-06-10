@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::{Result, anyhow};
 use clap::Parser;
 use reqwest::Url;
@@ -12,6 +14,10 @@ use crate::nix_netrc::NixNetrc;
 /// Configure Nix to use a binary cache.
 #[derive(Debug, Parser)]
 pub struct Use {
+    /// Path to the client config file.
+    #[clap(long)]
+    pub config_path: Option<PathBuf>,
+
     /// The cache to configure.
     ///
     /// This can be either `servername:cachename` or `cachename`
@@ -21,7 +27,7 @@ pub struct Use {
 
 pub async fn run(opts: Opts) -> Result<()> {
     let sub = opts.command.as_use().unwrap();
-    let config = Config::load()?;
+    let config = Config::load(sub.config_path.as_deref())?;
 
     let (server_name, server, cache) = config.resolve_cache(&sub.cache)?;
 

@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
 use dialoguer::Input;
@@ -14,6 +16,10 @@ use attic::api::v1::cache_config::{
 /// Manage caches on an Attic server.
 #[derive(Debug, Parser)]
 pub struct Cache {
+    /// Path to the client config file.
+    #[clap(long)]
+    pub config_path: Option<PathBuf>,
+
     #[clap(subcommand)]
     command: Command,
 }
@@ -165,16 +171,17 @@ struct Info {
 
 pub async fn run(opts: Opts) -> Result<()> {
     let sub = opts.command.as_cache().unwrap();
+    let config_path = sub.config_path.as_deref();
     match &sub.command {
-        Command::Create(sub) => create_cache(sub.to_owned()).await,
-        Command::Configure(sub) => configure_cache(sub.to_owned()).await,
-        Command::Destroy(sub) => destroy_cache(sub.to_owned()).await,
-        Command::Info(sub) => show_cache_config(sub.to_owned()).await,
+        Command::Create(sub) => create_cache(sub.to_owned(), config_path).await,
+        Command::Configure(sub) => configure_cache(sub.to_owned(), config_path).await,
+        Command::Destroy(sub) => destroy_cache(sub.to_owned(), config_path).await,
+        Command::Info(sub) => show_cache_config(sub.to_owned(), config_path).await,
     }
 }
 
-async fn create_cache(sub: Create) -> Result<()> {
-    let config = Config::load()?;
+async fn create_cache(sub: Create, config_path: Option<&Path>) -> Result<()> {
+    let config = Config::load(config_path.as_deref())?;
 
     let (server_name, server, cache) = config.resolve_cache(&sub.cache)?;
     let api = ApiClient::from_server_config(server.clone())?;
@@ -198,8 +205,8 @@ async fn create_cache(sub: Create) -> Result<()> {
     Ok(())
 }
 
-async fn configure_cache(sub: Configure) -> Result<()> {
-    let config = Config::load()?;
+async fn configure_cache(sub: Configure, config_path: Option<&Path>) -> Result<()> {
+    let config = Config::load(config_path.as_deref())?;
 
     let (server_name, server, cache) = config.resolve_cache(&sub.cache)?;
     let mut patch = CacheConfig::blank();
@@ -248,8 +255,8 @@ async fn configure_cache(sub: Configure) -> Result<()> {
     Ok(())
 }
 
-async fn destroy_cache(sub: Destroy) -> Result<()> {
-    let config = Config::load()?;
+async fn destroy_cache(sub: Destroy, config_path: Option<&Path>) -> Result<()> {
+    let config = Config::load(config_path.as_deref())?;
 
     let (server_name, server, cache) = config.resolve_cache(&sub.cache)?;
 
@@ -283,8 +290,8 @@ async fn destroy_cache(sub: Destroy) -> Result<()> {
     Ok(())
 }
 
-async fn show_cache_config(sub: Info) -> Result<()> {
-    let config = Config::load()?;
+async fn show_cache_config(sub: Info, config_path: Option<&Path>) -> Result<()> {
+    let config = Config::load(config_path.as_deref())?;
 
     let (_, server, cache) = config.resolve_cache(&sub.cache)?;
     let api = ApiClient::from_server_config(server.clone())?;
