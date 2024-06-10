@@ -93,12 +93,15 @@ pub struct ConfigWriteGuard<'a>(&'a mut Config);
 impl Config {
     /// Loads the configuration from the system.
     pub fn load(config_path: Option<&Path>) -> Result<Self> {
-        let path = get_config_path()
-            .map_err(|e| {
-                tracing::warn!("Could not get config path: {}", e);
-                e
-            })
-            .ok();
+        let path = match config_path {
+            Some(path) => Some(path.to_owned()),
+            None => get_config_path()
+                .map_err(|e| {
+                    tracing::warn!("Could not get config path: {}", e);
+                    e
+                })
+                .ok(),
+        };
 
         let data = ConfigData::load_from_path(path.as_ref())?;
 
