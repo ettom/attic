@@ -1,5 +1,6 @@
 use std::error::Error as StdError;
 use std::fmt;
+use std::time::Duration;
 
 use anyhow::Result;
 use bytes::Bytes;
@@ -244,6 +245,7 @@ fn build_http_client(token: Option<&str>) -> HttpClient {
 
     reqwest::Client::builder()
         .default_headers(headers)
+        .pool_idle_timeout(Duration::from_secs(15)) // Shorter than AWS-S3 20s
         .build()
         .unwrap()
 }
